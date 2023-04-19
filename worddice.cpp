@@ -7,9 +7,71 @@ Project 5
 #include <vector>
 #include <list>
 #include <map>
+#include <queue>
 #include <algorithm>
+#include <limits.h>
 
 using namespace std;
+
+bool bfs(vector<int> rGraph, int source, int sink, vector<int> parent ){
+    vector<bool> visited(rGraph.size(), false);
+
+    queue<int> que;
+    que.push(source);
+    visited[source] = true;
+    parent[source] = -1;
+
+    while(!que.empty()){
+        int u = que.front();
+        que.pop();
+
+        for(int i = 0; i < rGraph.size(); i++){
+            if(visited[i] == false && rGraph[u] > 0){
+                if(i == sink){
+                    parent[i] = u;
+                    return true;
+                }
+                que.push(i);
+                parent[i] = u;
+                visited[i] = true;
+            }
+        }
+    }
+
+    return false;
+}
+
+int karp(vector<list<int>> graph, int source, int sink){
+    int u, v;
+
+    vector<int> rGraph(graph.size(), 0);
+
+    for(int i = 0; i < graph.size(); i++){
+        rGraph[i] = graph[i].size();
+    }
+
+    vector<int> parent (graph.size());
+
+    int maxFlow = 0;
+
+    while(bfs(rGraph, source, sink, parent)){
+        int pathFlow = INT_MAX;
+        for(v = sink; v != source; v = parent[v]){
+            u = parent[v];
+            pathFlow = min(pathFlow, rGraph[u]);
+        }
+
+        for (v = sink; v != source; v = parent[v]){
+            u = parent[v];
+            rGraph[u] -= pathFlow;
+            rGraph[v] += pathFlow;
+        }
+
+        maxFlow += pathFlow;
+    }
+
+    return maxFlow;
+}
 
 int main(int argc, char *argv[]){
     ifstream fnF, fnS;
@@ -51,9 +113,7 @@ int main(int argc, char *argv[]){
     adjList.push_back(tempList);
     tempList.clear();
 
-    for(int i = 0; i < counter; i++){
-        adjList.push_back(tempList);
-    }
+    adjList.resize(counter+1);
 
     counter++;
     char tempLet;
@@ -75,6 +135,7 @@ int main(int argc, char *argv[]){
         tempList.clear();
         adjList.push_back(tempList);
         
+        /*
         for(int i = 0; i < adjList.size(); i++){
             cout << "Node " << i << ": ";
             for(lit = adjList[i].begin(); lit != adjList[i].end(); lit++){
@@ -82,7 +143,8 @@ int main(int argc, char *argv[]){
             }
             cout << endl;
         }
-        
+        */
+       cout << karp(adjList, 0, adjList.size()-1);
 
        adjList.resize(diceMap.size()+1);
        for(int i = 1; i < adjList.size(); i++){
