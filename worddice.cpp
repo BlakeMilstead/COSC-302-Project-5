@@ -13,9 +13,8 @@ Project 5
 
 using namespace std;
 
-bool bfs(vector<int> rGraph, int source, int sink, vector<int> parent ){
+bool bfs(vector<vector<int>> &rGraph, int &source, int &sink, vector<int> &parent ){
     vector<bool> visited(rGraph.size(), false);
-
     queue<int> que;
     que.push(source);
     visited[source] = true;
@@ -26,7 +25,7 @@ bool bfs(vector<int> rGraph, int source, int sink, vector<int> parent ){
         que.pop();
 
         for(int i = 0; i < rGraph.size(); i++){
-            if(visited[i] == false && rGraph[u] > 0){
+            if(visited[i] == false && rGraph[u][i] > 0){
                 if(i == sink){
                     parent[i] = u;
                     return true;
@@ -41,13 +40,16 @@ bool bfs(vector<int> rGraph, int source, int sink, vector<int> parent ){
     return false;
 }
 
-int karp(vector<list<int>> graph, int source, int sink){
+int karp(vector<vector<int>> &graph, int source, int sink, vector<int> &diceTrace){
     int u, v;
 
-    vector<int> rGraph(graph.size(), 0);
-
-    for(int i = 0; i < graph.size(); i++){
-        rGraph[i] = graph[i].size();
+    vector<vector<int>> rGraph(graph.size(), vector<int> (graph.size(), 0));
+    for (int i = 0; i < graph.size(); i++)
+    {
+        for (int j = 0; j < graph[i].size(); j++)
+        {
+            rGraph[i][j] = graph[i][j];
+        }
     }
 
     vector<int> parent (graph.size());
@@ -58,19 +60,29 @@ int karp(vector<list<int>> graph, int source, int sink){
         int pathFlow = INT_MAX;
         for(v = sink; v != source; v = parent[v]){
             u = parent[v];
-            pathFlow = min(pathFlow, rGraph[u]);
+            pathFlow = min(pathFlow, rGraph[u][v]);
         }
 
         for (v = sink; v != source; v = parent[v]){
             u = parent[v];
-            rGraph[u] -= pathFlow;
-            rGraph[v] += pathFlow;
+            rGraph[u][v] -= pathFlow;
+            rGraph[v][u] += pathFlow;
         }
 
         maxFlow += pathFlow;
     }
 
-    return maxFlow;
+        int wordPlace = rGraph.size()-diceTrace.size()-1;
+        for(int i = 0; i < wordPlace; i++){
+            for(int j = 0; j < rGraph.size(); j++){
+                if (rGraph[i+wordPlace][j] != 0){
+                    diceTrace[i] = (j - 1);
+                }
+            }
+        }
+        
+        return maxFlow;
+        
 }
 
 int main(int argc, char *argv[]){
@@ -96,61 +108,93 @@ int main(int argc, char *argv[]){
 
     string temp;
 
-    vector<list<int>> adjList;
+    vector<vector<int>> adjMat;
     map<int, string> diceMap;
     map<int, string>:: iterator mit;
 
     int counter = 0;
 
-    list<int> tempList;
+    vector<int> tempVector;
     list<int>:: iterator lit;
 
-    while(fnF >> temp){
-        tempList.push_back(++counter);
+    tempVector.push_back(0);
+
+    while(fnF >> temp){ //Getting Dice
+        tempVector.push_back(1);
+        counter++;
         diceMap.insert({counter, temp});
     }
     
-    adjList.push_back(tempList);
-    tempList.clear();
+    adjMat.push_back(tempVector); //Creating Source Row of AdjMatrix
 
-    adjList.resize(counter+1);
-
-    counter++;
     char tempLet;
     while (fnS >> temp){ //Main while loop
-        tempList.push_back(adjList.size()+temp.length());
+        int adjMatSize = counter+2+temp.size();
+
+        adjMat[0].resize(adjMatSize, 0);
+        
+        tempVector.clear();
+        tempVector.resize(adjMatSize, 0);
+
+        for (int i = 0; i < counter; i++){ // Creating Dice Rows of AdjMatrix
+            adjMat.push_back(tempVector);
+        }
+
+        tempVector[0] = 0;
+        tempVector[adjMatSize-1] = 1;
+
+        for (int i = 0; i < temp.size(); i++){ // Creating Word Rows of AdjMatrix
+            adjMat.push_back(tempVector);
+        }
+
+        tempVector[adjMatSize-1] = 0;
+        adjMat.push_back(tempVector);
+    
         for(int i = 0; i < temp.length(); i++){
             tempLet = temp[i];
             for(mit = diceMap.begin(); mit != diceMap.end(); mit++){
                 for(int j = 0; j < mit->second.length(); j++){
                     if(mit->second[j] == tempLet){
-                        if (find(adjList[mit->first].begin(), adjList[mit->first].end(), counter+i) == adjList[mit->first].end()){
-                            adjList[mit->first].push_back(counter + i);
-                        }
+                        adjMat[mit->first][counter+i+1] = 1;
                     }
                 }
             }
-            adjList.push_back(tempList);
         }
-        tempList.clear();
-        adjList.push_back(tempList);
-        
+
         /*
-        for(int i = 0; i < adjList.size(); i++){
+        
+        for(int i = 0; i < adjMat.size(); i++){
             cout << "Node " << i << ": ";
-            for(lit = adjList[i].begin(); lit != adjList[i].end(); lit++){
-                cout <<  *lit << ", ";  
+            for(int j = 0; j < adjMat.size(); j++){
+                if(adjMat[i][j] == 1){
+                    cout << j << ", ";
+                }
             }
             cout << endl;
-        }
-        */
-       cout << karp(adjList, 0, adjList.size()-1);
+        }cout << endl  << endl;
 
-       adjList.resize(diceMap.size()+1);
-       for(int i = 1; i < adjList.size(); i++){
-            adjList[i].clear();
-       }
-       cout << endl;
+        */
+
+        vector<int> diceTrace(temp.size(), -1);
+
+        
+
+        if(karp(adjMat, 0, adjMat.size()-1, diceTrace) != temp.size()){
+            cout << "CANNOT SPELL " << temp << endl;
+        } else {
+            for(int i = 0; i < diceTrace.size(); i++){
+                cout << diceTrace[i];
+                if(i != diceTrace.size()-1){
+                    cout << ",";
+                } else {
+                    cout << ": ";
+                }
+            }
+            cout << temp << endl;
+        }
+
+    
+        adjMat.resize(1);
     }
 
     fnF.close();

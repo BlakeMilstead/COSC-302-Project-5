@@ -1,0 +1,11 @@
+Blake Milstead
+COSC 302
+Doctor Emrich
+4-20-2023
+Project 5
+
+I worked with Randy Lin on this project. Randy and I worked on every part of this project together
+while on discord. There was no moment when either of us worked on it separately.
+
+The time complexity of our Edmonds-Karp algorithm is O(EV^3) as described by Geeks for Geeks using and
+adjacecy matrix graph implementation. We used a few vectors, a map, and a queue to complete this task.
